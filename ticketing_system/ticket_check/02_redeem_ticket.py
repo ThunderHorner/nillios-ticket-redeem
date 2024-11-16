@@ -101,8 +101,7 @@ def parse_args(args=None):
     )
     parser.add_argument(
         "--ticket_id",
-        required=False,
-        default='1',
+        required=True,
         type=str,
         help="User ID of the user who will compute with the secret being stored",
     )
@@ -114,8 +113,7 @@ def parse_args(args=None):
     )
     parser.add_argument(
         "--wallet_id",
-        required=False,
-        default='5',
+        required=True,
         type=str,
         help="User ID of the user who will compute with the secret being stored",
     )

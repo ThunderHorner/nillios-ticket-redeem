@@ -5,15 +5,16 @@ import time
 
 # API base URL
 BASE_URL = "http://localhost:5001/api"
-
+TICKET_ID = 31
+WALLET_ID = 90
 try:
     # Step 1: Initial Setup
     print("\n1. Initial Setup...")
     initial_response = requests.post(
         f"{BASE_URL}/initial",
         json={
-            "ticket_id": 2,
-            "ticket_owner": 8,
+            "ticket_id": TICKET_ID,
+            "ticket_owner": WALLET_ID,
             "is_redeemed": 0
         }
     )
@@ -32,8 +33,8 @@ try:
         json={
             "user_id": initial_data['user_id'],
             "store_id": initial_data['store_id'],
-            "ticket_id":2,
-            "wallet_id":8
+            "ticket_id":TICKET_ID,
+            "wallet_id":WALLET_ID
 
         }
     )
@@ -66,5 +67,3 @@ except Exception as e:
     print(f"\n❌ Test failed: {e}")
     raise
 
-if __name__ == "__main__":
-    pass

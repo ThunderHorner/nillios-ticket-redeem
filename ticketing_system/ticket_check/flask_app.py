@@ -122,7 +122,7 @@ def verify_ticket():
         return jsonify({
             'cmd': ' '.join(cmd),
             'status': 'success',
-            'result':result.stdout,
+            'result':json.loads(''.join(result.stdout).split('The result is')[-1].strip('\n').strip(' ').replace('\'','\"')),
             'store_id': store_id,
             'party_ids_to_store_ids': party_ids_to_store_ids
         })
