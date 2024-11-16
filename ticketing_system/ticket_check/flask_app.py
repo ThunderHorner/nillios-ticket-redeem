@@ -1,120 +1,120 @@
-# app.py
 from flask import Flask, jsonify, request
-import asyncio
-from ticket_storage import TicketStorage, NillionConfig
-from ticket_redemption import TicketRedemption
-from ticket_computation import TicketComputation
+import subprocess
+import json
 
 app = Flask(__name__)
-
-# Initialize config
-config = NillionConfig.from_env()
 
 
 @app.route('/api/initial', methods=['POST'])
 def initial_setup():
     try:
-        # Get parameters from request JSON
         data = request.get_json()
-        ticket_id = data.get('ticket_id', 1)  # default to 1 if not provided
-        ticket_owner = data.get('ticket_owner', 5)  # default to 5 if not provided
-        is_redeemed = data.get('is_redeemed', 0)  # default to 0 if not provided
+        ticket_id = data.get('ticket_id', 1)
+        ticket_owner = data.get('ticket_owner', 5)
+        is_redeemed = data.get('is_redeemed', 0)
 
-        # Create event loop for async operations
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        cmd = [
+            'python3',
+            '/app/ticketing_system/ticket_check/01_server_initial_data_set.py',
+            '--ticket_id', str(ticket_id),
+            '--ticket_owner', str(ticket_owner),
+            '--is_redeemed', str(is_redeemed)
+        ]
 
-        # Initialize storage with provided values
-        storage = TicketStorage(config, ticket_id=ticket_id, ticket_owner=ticket_owner, is_redeemed=is_redeemed)
-        payments_client, payments_wallet = storage.setup_payments()
+        result = subprocess.run(cmd, capture_output=True, text=True)
 
-        # Run async operations
-        program_id = loop.run_until_complete(storage.store_program(payments_client, payments_wallet))
-        store_id = loop.run_until_complete(storage.store_secrets(program_id, payments_client, payments_wallet))
+        # Look for user_id and store_id in the output
+        user_id = None
+        store_id = None
+
+        for line in result.stdout.split('\n'):
+            if '--user_id_1' in line:
+                user_id = line.split('--user_id_1')[1].split('--store_id_1')[0].strip()
+                store_id = line.split('--store_id_1')[1].strip()
+
+        if user_id and store_id:
+            return jsonify({
+                'status': 'success',
+                'user_id': user_id,
+                'store_id': store_id
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': f'Failed to get IDs: {result.stderr}'
+            }), 500
+
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/redeem', methods=['POST'])
+def redeem_ticket():
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        store_id = data.get('store_id')
+
+        cmd = [
+            'python3',
+            '/app/ticketing_system/ticket_check/02_redeem_ticket.py',
+            '--user_id_1', user_id,
+            '--store_id_1', store_id
+        ]
+
+        result = subprocess.run(cmd, capture_output=True, text=True)
+
+        # Look for party_ids_to_store_ids in the output
+        party_mapping = None
+        for line in result.stdout.split('\n'):
+            if '--party_ids_to_store_ids' in line:
+                party_mapping = line.split('--party_ids_to_store_ids')[1].strip()
+
+        if party_mapping:
+            return jsonify({
+                'status': 'success',
+                'store_id': store_id,
+                'party_ids_to_store_ids': party_mapping
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': f'Failed to get party mapping: {result.stderr}'
+            }), 500
+
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/verify', methods=['POST'])
+def verify_ticket():
+    try:
+        data = request.get_json()
+        store_id = data.get('store_id')
+        party_ids_to_store_ids = data.get('party_ids_to_store_ids')
+
+        cmd = [
+            'python3',
+            '/app/ticketing_system/ticket_check/03_multi_party_compute.py',
+            '--store_id_1', store_id,
+            '--party_ids_to_store_ids', party_ids_to_store_ids
+        ]
+
+        result = subprocess.run(cmd, capture_output=True, text=True)
 
         return jsonify({
             'status': 'success',
-            'user_id': storage.user_id,
+            'result': result.stdout,
             'store_id': store_id,
-            'ticket_details': {
-                'ticket_id': ticket_id,
-                'ticket_owner': ticket_owner,
-                'is_redeemed': is_redeemed
-            }
+            'party_ids_to_store_ids': party_ids_to_store_ids
         })
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
 
-
-@app.route('/api/redeem/<user_id>/<store_id>', methods=['POST'])
-def redeem_ticket(user_id, store_id):
-    try:
-        # Get parameters from request JSON
-        data = request.get_json()
-        user_ticket = data.get('user_ticket', 1)  # default to 1 if not provided
-        user_wallet = data.get('user_wallet', 5)  # default to 5 if not provided
-
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-        # Initialize redemption with provided values
-        redemption = TicketRedemption(config, user_ticket=user_ticket, user_wallet=user_wallet)
-        payments_client, payments_wallet = redemption.setup_payments()
-
-        # Store user secrets
-        store_id_result = loop.run_until_complete(
-            redemption.store_user_secrets(user_id, payments_client, payments_wallet)
-        )
-
-        party_ids_to_store_ids = " ".join(
-            [f"{party_id}:{store_id}" for party_id, store_id in zip(redemption.party_ids, redemption.store_ids)]
-        )
-
-        return jsonify({
-            'status': 'success',
-            'store_id_1': store_id,
-            'party_ids_to_store_ids': party_ids_to_store_ids,
-            'ticket_details': {
-                'user_ticket': user_ticket,
-                'user_wallet': user_wallet
-            }
-        })
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
-
-
-@app.route('/api/verify/<store_id>/<party_store_ids>', methods=['POST'])
-def verify_ticket(store_id, party_store_ids):
-    try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-        computation = TicketComputation(config)
-        payments_client, payments_wallet = computation.setup_payments()
-
-        # Parse party_store_ids string into list
-        party_store_list = party_store_ids.split()
-        party_store_mapping = computation.parse_party_store_ids(party_store_list)
-
-        result = loop.run_until_complete(
-            computation.perform_computation(
-                store_id,
-                party_store_mapping,
-                payments_client,
-                payments_wallet
-            )
-        )
-
-        return jsonify({
-            'status': 'success',
-            'computation_result': result
-        })
     except Exception as e:
         return jsonify({
             'status': 'error',

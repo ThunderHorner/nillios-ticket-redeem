@@ -96,7 +96,6 @@ class TicketComputation:
             compute_time_secrets,
             receipt,
         )
-        print(compute_id)
 
         print(f"The computation was sent to the network. compute_id: {compute_id}")
         return await self.wait_for_result()
@@ -129,3 +128,24 @@ def parse_args(args=None):
     )
     return parser.parse_args(args)
 
+
+async def main(args=None):
+    parsed_args = parse_args(args)
+    config = NillionConfig.from_env()
+    computation = TicketComputation(config)
+
+    payments_client, payments_wallet = computation.setup_payments()
+    party_store_mapping = computation.parse_party_store_ids(parsed_args.party_ids_to_store_ids)
+
+    result = await computation.perform_computation(
+        parsed_args.store_id_1,
+        party_store_mapping,
+        payments_client,
+        payments_wallet
+    )
+
+    return result
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

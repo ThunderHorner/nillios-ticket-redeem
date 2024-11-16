@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  ticketing-system:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ${HOME}/.config/nillion:/home/appuser/.config/nillion:ro
+      - nillion-data:/home/appuser/.nillion
+    environment:
+      - PYTHONPATH=/app
+      - FLASK_APP=ticketing_system.ticket_check.flask_app
+      - FLASK_ENV=production
+    restart: unless-stopped
+
+volumes:
+  nillion-data:
