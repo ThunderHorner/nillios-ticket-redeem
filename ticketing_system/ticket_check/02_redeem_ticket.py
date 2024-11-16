@@ -34,8 +34,8 @@ class NillionConfig:
 class TicketRedemption:
     def __init__(self, config: NillionConfig,user_ticket, user_wallet):
         self.config = config
-        self.user_ticket = user_ticket
-        self.user_wallet = user_wallet
+        self.user_ticket = int(user_ticket)
+        self.user_wallet = int(user_wallet)
         self.client = create_nillion_client(
             UserKey.from_seed(config.seed),
             NodeKey.from_seed(config.seed)
@@ -100,8 +100,22 @@ def parse_args(args=None):
         description="Create a secret on the Nillion network with set read/retrieve permissions"
     )
     parser.add_argument(
+        "--ticket_id",
+        required=False,
+        default='1',
+        type=str,
+        help="User ID of the user who will compute with the secret being stored",
+    )
+    parser.add_argument(
         "--user_id_1",
         required=True,
+        type=str,
+        help="User ID of the user who will compute with the secret being stored",
+    )
+    parser.add_argument(
+        "--wallet_id",
+        required=False,
+        default='5',
         type=str,
         help="User ID of the user who will compute with the secret being stored",
     )
@@ -117,7 +131,7 @@ def parse_args(args=None):
 async def main(args=None):
     parsed_args = parse_args(args)
     config = NillionConfig.from_env()
-    redemption = TicketRedemption(config, 1, 5 )
+    redemption = TicketRedemption(config, parsed_args.ticket_id, parsed_args.wallet_id )
 
     payments_client, payments_wallet = redemption.setup_payments()
     store_id = await redemption.store_user_secrets(

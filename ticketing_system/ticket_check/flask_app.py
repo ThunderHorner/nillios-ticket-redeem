@@ -15,7 +15,7 @@ def initial_setup():
 
         cmd = [
             'python3',
-            '/app/ticketing_system/ticket_check/01_server_initial_data_set.py',
+            '01_server_initial_data_set.py',
             '--ticket_id', str(ticket_id),
             '--ticket_owner', str(ticket_owner),
             '--is_redeemed', str(is_redeemed)
@@ -34,6 +34,7 @@ def initial_setup():
 
         if user_id and store_id:
             return jsonify({
+                'cmd': ' '.join(cmd),
                 'status': 'success',
                 'user_id': user_id,
                 'store_id': store_id
@@ -57,12 +58,16 @@ def redeem_ticket():
         data = request.get_json()
         user_id = data.get('user_id')
         store_id = data.get('store_id')
+        ticket_id = data.get('ticket_id')
+        wallet_id = data.get('wallet_id')
 
         cmd = [
             'python3',
-            '/app/ticketing_system/ticket_check/02_redeem_ticket.py',
-            '--user_id_1', user_id,
-            '--store_id_1', store_id
+            '02_redeem_ticket.py',
+            '--ticket_id', str(ticket_id),
+            '--user_id_1', str(user_id),
+            '--wallet_id', str(wallet_id),
+            '--store_id_1', str(store_id)
         ]
 
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -75,6 +80,7 @@ def redeem_ticket():
 
         if party_mapping:
             return jsonify({
+                'cmd': ' '.join(cmd),
                 'status': 'success',
                 'store_id': store_id,
                 'party_ids_to_store_ids': party_mapping
@@ -101,16 +107,22 @@ def verify_ticket():
 
         cmd = [
             'python3',
-            '/app/ticketing_system/ticket_check/03_multi_party_compute.py',
+            '03_multi_party_compute.py',
             '--store_id_1', store_id,
             '--party_ids_to_store_ids', party_ids_to_store_ids
         ]
+        print(cmd)
+        print(cmd)
+        print(cmd)
+        print(cmd)
+        print(cmd)
 
         result = subprocess.run(cmd, capture_output=True, text=True)
 
         return jsonify({
+            'cmd': ' '.join(cmd),
             'status': 'success',
-            'result': result.stdout,
+            'result':result.stdout,
             'store_id': store_id,
             'party_ids_to_store_ids': party_ids_to_store_ids
         })
@@ -123,4 +135,4 @@ def verify_ticket():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)

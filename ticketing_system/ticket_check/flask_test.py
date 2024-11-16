@@ -4,7 +4,7 @@ import json
 import time
 
 # API base URL
-BASE_URL = "http://localhost:5000/api"
+BASE_URL = "http://localhost:5001/api"
 
 try:
     # Step 1: Initial Setup
@@ -12,8 +12,8 @@ try:
     initial_response = requests.post(
         f"{BASE_URL}/initial",
         json={
-            "ticket_id": 1,
-            "ticket_owner": 5,
+            "ticket_id": 2,
+            "ticket_owner": 8,
             "is_redeemed": 0
         }
     )
@@ -31,7 +31,10 @@ try:
         f"{BASE_URL}/redeem",
         json={
             "user_id": initial_data['user_id'],
-            "store_id": initial_data['store_id']
+            "store_id": initial_data['store_id'],
+            "ticket_id":2,
+            "wallet_id":8
+
         }
     )
     redeem_data = redeem_response.json()
