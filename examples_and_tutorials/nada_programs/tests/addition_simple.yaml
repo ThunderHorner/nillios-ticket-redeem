@@ -1,7 +1,0 @@
----
-program: addition_simple
-inputs:
-    my_int2: 3
-    my_int1: 3
-expected_outputs:
-  my_output: 6

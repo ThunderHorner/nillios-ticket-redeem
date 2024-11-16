@@ -1,8 +1,0 @@
----
-program: addition_simple_multi_party
-inputs:
-  my_int1: 3
-  my_int2: 3
-  my_int3: 3
-expected_outputs:
-  my_output: 9

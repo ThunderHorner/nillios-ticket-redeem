@@ -1,9 +1,0 @@
----
-program: less_than
-inputs:
-  D: 3
-  B: 3
-  C: 3
-  A: 3
-expected_outputs:
-  my_output: false

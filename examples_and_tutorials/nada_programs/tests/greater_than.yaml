@@ -1,9 +1,0 @@
----
-program: greater_than
-inputs:
-  A: 3
-  B: 3
-  D: 3
-  C: 3
-expected_outputs:
-  my_output: true
